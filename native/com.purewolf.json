@@ -1,0 +1,11 @@
+{
+  "name": "com.purewolf",
+  "description": "Native host for PureWolf Firefox extension",
+  "path": "/home/USERNAME/.purewolf/purewolf-native",
+  "type": "stdio",
+  "allowed_extensions": [
+    "purewolf@addon"
+  ]
+}
+
+

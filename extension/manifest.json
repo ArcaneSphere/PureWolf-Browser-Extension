@@ -1,0 +1,37 @@
+{
+  "manifest_version": 2,
+  "name": "PureWolf - Local TELA services for DERO",
+  "version": "0.8.0",
+  "description": "PureWolf connects Firefox to a user-installed local TELA services for the DERO Homomorphic Encryption Blockchain Protocol using native messaging.",
+
+  "icons": {
+    "48": "icons/purewolf-48x48.png",
+    "96": "icons/purewolf-96x96.png"
+  },
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "purewolf@addon",
+      "strict_min_version": "140",
+      "data_collection_permissions": {
+        "required": []
+      }
+    }
+  },
+
+  "permissions": [
+    "nativeMessaging",
+    "storage",
+    "tabs"
+  ],
+
+  "background": {
+    "scripts": ["js/background.js"],
+    "persistent": true
+  },
+
+  "browser_action": {
+    "default_title": "PureWolf",
+    "default_popup": "popup/popup.html"
+  }
+}

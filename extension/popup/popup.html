@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+  /* Popup-specific override */
+  body {
+    display: block !important;
+    width: 300px;
+    padding: 20px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: auto;
+  }
+
+  /* Popup header (logo + title centered) */
+  #popup-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  #popup-logo {
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
+    margin-bottom: 6px;
+  }
+
+  .popup-title {
+    font-size: 32px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+  
+  .popup-subtitle {
+    font-size: 16px;
+    font-weight: 500;
+    text-align: center;
+    color: var(--text);
+    margin-bottom: 32px;
+  }
+
+  #status {
+    padding: 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    font-size: 13px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+  }
+
+  h3 {
+    margin: 0 0 20px 0;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  button {
+    display: block;
+    width: 100%;
+    margin: 8px 0;
+    padding: 12px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  #open-dashboard {
+    background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+  }
+
+  #start-server {
+    background: var(--success);
+  }
+
+  #start-server:hover {
+    background: #00a676;
+  }
+
+  #stop-server {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  #stop-server:hover {
+    background: var(--panel-2);
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+  </style>
+</head>
+<body>
+  <div id="popup-header">
+    <img
+      id="popup-logo"
+      src="../icons/purewolf-96x96.png"
+      alt="PureWolf logo"
+    />
+    <span class="popup-title">PureWolf</span>
+    <span class="popup-subtitle">TELA Services for DERO</span>
+  </div>
+  <div id="status">⏳ Checking status...</div>
+  <button id="open-dashboard">📊 Open Dashboard</button>
+  <!-- <button id="start-server">▶ Start Server</button> -->
+  <!-- <button id="stop-server">⏹ Stop Server</button> -->
+  <script src="../js/popup.js"></script>
+</body>
+</html>
