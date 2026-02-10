@@ -26,6 +26,13 @@
   let minRating = 0;
   let refreshInterval = 5000; // auto-refresh every 5s
 
+  // -------------------- Set default minRating to 30 ----
+  if (minRatingEl && minRatingVal) {
+    minRating = 30;                  // update the variable
+    minRatingEl.value = 30;          // move the slider visually
+    minRatingVal.textContent = "30"; // update the label
+  }
+
   // -------------------- SCID Fetchers --------------------
   async function fetchSCIDData(scid) {
     try {
@@ -121,45 +128,72 @@
   }
 
   function renderResults(results) {
-    resultsEl.textContent = "";
-    const mode = sortModeEl?.value || "name_asc";
-    results = sortResults(results, mode);
+  resultsEl.textContent = "";
+  const mode = sortModeEl?.value || "name_asc";
+  results = sortResults(results, mode);
 
-    const filtered = results.filter(r => r.average >= minRating);
-    if (!filtered.length) {
-      resultsEl.appendChild(createNoResults("No results found"));
-      return;
+  const filtered = results.filter(r => r.average >= minRating);
+  if (!filtered.length) {
+    resultsEl.appendChild(createNoResults("No results found"));
+    return;
+  }
+
+  // Simple hexagon SVG as a data URL matching SCID icon style (theme + scale aware)
+  function createHexIcon() {
+    const div = document.createElement("div");
+    div.className = "scid-svg"; // attach class for CSS
+    div.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1001">
+        <polygon points="0.5,250.55 433.47,0.58 866.43,250.55 866.43,750.5 433.47,1000.47 0.5,750.5"
+                fill="none" stroke="currentColor" stroke-width="2"/>
+        <polygon points="209.17,371.63 209.17,628.97 433.69,759.79 657.39,630.28 657.39,374.85 433.26,241.71 209.17,371.63"
+                fill="none" stroke="currentColor" stroke-width="2"/>
+        <polygon points="239.64,389.3 239.64,611.21 348.32,675.69 366.79,580 331.72,558.65 331.72,442.81 433.41,384.91 533.88,443.47 533.88,559.84 498.24,579.73 515.93,678.24 626.31,612.4 626.31,392.17 433.26,277.45 239.64,389.3"
+                fill="none" stroke="currentColor" stroke-width="2"/>
+        <polygon points="432.54,420.32 502.73,461.22 502.73,542 464.66,563.58 485.09,694.51 433.7,724.39 378.96,692.5 400.62,564.62 362.1,541.19 362.1,461.28 432.54,420.32"
+                fill="none" stroke="currentColor" stroke-width="2"/>
+      </svg>`;
+    return div;
+  }
+
+  filtered.forEach(r => {
+    const div = document.createElement("div");
+    div.className = "result";
+
+    const iconSlot = document.createElement("div");
+    iconSlot.className = "icon-slot";
+
+    if (r.iconURL) {
+      const img = document.createElement("img");
+      img.className = "icon";
+      img.src = r.iconURL;
+
+      img.onerror = () => {
+        iconSlot.innerHTML = "";
+        iconSlot.appendChild(createHexIcon());
+      };
+
+      iconSlot.appendChild(img);
+    } else {
+      iconSlot.appendChild(createHexIcon());
     }
 
-    filtered.forEach(r => {
-      const div = document.createElement("div");
-      div.className = "result";
+    const content = document.createElement("div");
+    content.className = "content";
 
-      const iconSlot = document.createElement("div");
-      iconSlot.className = "icon-slot";
-      if (r.iconURL) {
-        const img = document.createElement("img");
-        img.className = "icon";
-        img.src = r.iconURL;
-        iconSlot.appendChild(img);
-      }
+    const urlEl = document.createElement("div"); urlEl.className="url"; urlEl.textContent=r.dURL;
+    const nameEl = document.createElement("div"); nameEl.className="nameHdr"; nameEl.textContent=r.nameHdr;
+    nameEl.onclick = () => handleSCIDClick(r.scid);
+    const scidEl = document.createElement("div"); scidEl.className="scid"; scidEl.textContent=r.scid;
+    scidEl.onclick = () => handleSCIDClick(r.scid);
+    const descrEl = document.createElement("div"); descrEl.className="descr"; descrEl.textContent=r.descrHdr;
+    const ratingEl = document.createElement("div"); ratingEl.className="rating"; ratingEl.textContent=`👍 ${r.likes} 👎 ${r.dislikes} ⭐ ${r.average}`;
 
-      const content = document.createElement("div");
-      content.className = "content";
-
-      const urlEl = document.createElement("div"); urlEl.className="url"; urlEl.textContent=r.dURL;
-      const nameEl = document.createElement("div"); nameEl.className="nameHdr"; nameEl.textContent=r.nameHdr;
-      nameEl.onclick = () => handleSCIDClick(r.scid);
-      const scidEl = document.createElement("div"); scidEl.className="scid"; scidEl.textContent=r.scid;
-      scidEl.onclick = () => handleSCIDClick(r.scid);
-      const descrEl = document.createElement("div"); descrEl.className="descr"; descrEl.textContent=r.descrHdr;
-      const ratingEl = document.createElement("div"); ratingEl.className="rating"; ratingEl.textContent=`👍 ${r.likes} 👎 ${r.dislikes} ⭐ ${r.average}`;
-
-      content.append(urlEl, nameEl, scidEl, descrEl, ratingEl);
-      div.append(iconSlot, content);
-      resultsEl.appendChild(div);
-    });
-  }
+    content.append(urlEl, nameEl, scidEl, descrEl, ratingEl);
+    div.append(iconSlot, content);
+    resultsEl.appendChild(div);
+  });
+}
 
   function handleSCIDClick(scid) {
     if (scidInput) { scidInput.value = scid; scidInput.dispatchEvent(new Event("input")); }

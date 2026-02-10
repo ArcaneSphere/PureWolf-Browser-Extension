@@ -11,24 +11,66 @@
   <!-- Sidebar -->
   <div id="sidebar">
     <div id="sidebar-header">
+      <button id="toggle-sidebar" title="Collapse sidebar">☰</button>
+
       <img id="sidebar-logo" src="../icons/purewolf-96x96.png" alt="PureWolf logo" />
       <span class="sidebar-title">PureWolf</span>
     </div>
+
     <div id="sidebar-nav">
-      <div class="nav-item active" data-page="server">Server Status</div>
-      <div class="nav-item" data-page="search">Search</div>
-      <div class="nav-item" data-page="bookmarks">Bookmarks</div>
-      <div class="nav-item" data-page="settings">Settings</div>
-      <div class="nav-item" data-page="help">Help</div>
-      <div class="nav-item" data-page="about">About</div>
+      <div class="nav-item active" data-page="server">
+        <span class="nav-icon">🖥️</span>
+        <span class="nav-text">Server Status</span>
+      </div>
+
+      <div class="nav-item" data-page="search">
+        <span class="nav-icon">🔍</span>
+        <span class="nav-text">Search</span>
+      </div>
+
+      <div class="nav-item" data-page="bookmarks">
+        <span class="nav-icon">⭐</span>
+        <span class="nav-text">Bookmarks</span>
+      </div>
+
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-text">Settings</span>
+      </div>
+
+      <div class="nav-item" data-page="help">
+        <span class="nav-icon">❓</span>
+        <span class="nav-text">Help</span>
+      </div>
+
+      <div class="nav-item" data-page="about">
+        <span class="nav-icon">ℹ️</span>
+        <span class="nav-text">About</span>
+      </div>
+    </div>
+    <div id="sidebar-status">
+      <div class="sb-status-row">
+        <span class="sb-label">TELA</span>
+        <span id="tela-status">
+          <span class="sb-icon">🔴</span>
+          <span class="sb-text">Not connected</span>
+        </span>
+      </div>
+
+      <div class="sb-status-row">
+        <span class="sb-label">Gnomon</span>
+        <span id="gnomon-status">
+          <span class="sb-icon">🔴</span>
+          <span class="sb-text">Not connected</span>
+        </span>
+      </div>
     </div>
   </div>
+
 
   <!-- Main content -->
   <div id="main">
     <div id="header">
-      <button id="toggle-sidebar">☰</button>
-
       <!-- Node input -->
       <div class="input-row top-input">
         <div class="input-wrapper">
@@ -74,20 +116,30 @@
       </button>
     </div>
 
-      <div id="content">
+     <div id="content">
         <!-- Server Control -->
         <div id="page-server" class="page active">
           <h2>Server Status</h2>
+
           <div class="setting-item">
             <div class="setting-label">Servers Status</div>
             <div class="controls-column">
-              <div><strong>TELA:</strong> <span id="tela-status">🔴 Not connected</span></div>
-              <div><strong>Gnomon:</strong> <span id="gnomon-status">🔴 Not connected</span></div>
+              <!-- TELA Status -->
+              <div class="status-row">
+                <strong>TELA:</strong>
+                <span id="tela-status" data-server="tela">🔴 Not connected</span>
+              </div>
+
+              <!-- Gnomon Status -->
+              <div class="status-row">
+                <strong>Gnomon:</strong>
+                <span id="gnomon-status" data-server="gnomon">🔴 Not connected</span>
+              </div>
             </div>
           </div>
+
           <p>Servers are started automatically once a node is connected.</p>
         </div>
-      
 
       <!-- Search Page -->
       <div id="page-search" class="page">
@@ -220,7 +272,7 @@
       <div id="page-about" class="page">
         <h2>About</h2>
         <div class="info-box">
-          <p><strong>Version:</strong> 0.8.1</p>
+          <p><strong>Version:</strong> 0.9.0</p>
           <p><strong>Description:</strong> Browser extension to access TELA's decentralized applications and websites from the DERO blockchain.</p>
         </div>
       </div>

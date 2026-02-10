@@ -98,9 +98,8 @@ body {
 }
 
 #sidebar.collapsed {
-  width: 0;
-  min-width: 0;
-  border: none;
+  width: 64px;
+  min-width: 64px;
 }
 
 #sidebar-header {
@@ -108,18 +107,46 @@ body {
   font-weight: 700;
   font-size: 23px;
   border-bottom: 1px solid var(--border);
-  /* background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%); */
   background: var(--panel);
-  color: var(--text);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+#sidebar #toggle-sidebar {
+  width: 36px;
+  height: 36px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+#sidebar #toggle-sidebar:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+#sidebar #toggle-sidebar:active {
+  transform: scale(0.95);
 }
 
 #sidebar-logo {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
+}
+
+#sidebar.collapsed #sidebar-logo,
+#sidebar.collapsed .sidebar-title {
+  display: none;
+}
+
+#sidebar.collapsed #sidebar-header {
+  justify-content: center;
 }
 
 #sidebar-nav {
@@ -150,6 +177,146 @@ body {
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: 600;
+}
+
+/* Hide text, center icons when collapsed */
+
+#sidebar.collapsed .sidebar-title,
+#sidebar.collapsed #sidebar-logo {
+  display: none;
+}
+
+#sidebar.collapsed .nav-text {
+  display: none;
+}
+
+#sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 14px 0;
+}
+
+.nav-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Smooth text fade when expanding*/
+
+.nav-text {
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+}
+
+#sidebar.collapsed .nav-text {
+  opacity: 0;
+}
+
+/* Make active icon glow nicely*/
+
+#sidebar.collapsed .nav-item.active {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* Hover tooltip when collapsed*/
+
+#sidebar.collapsed .nav-item {
+  position: relative;
+}
+
+#sidebar.collapsed .nav-item:hover::after {
+  content: attr(data-page);
+  position: absolute;
+  left: 72px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  z-index: 10;
+}
+
+/* Status indicators*/
+
+#sidebar-status {
+  border-top: 1px solid var(--border);
+  padding: 12px;
+  background: var(--panel);
+}
+
+.sb-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.sb-status-row:last-child {
+  margin-bottom: 0;
+}
+
+.sb-label {
+  min-width: 52px;
+}
+
+#sidebar.collapsed #sidebar-status {
+  padding: 10px 0;
+}
+
+#sidebar.collapsed .sb-label {
+  display: none;
+}
+
+#sidebar.collapsed .sb-status-row {
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Replace labels with T: / G: */
+#sidebar.collapsed .sb-status-row:first-child::before,
+#sidebar.collapsed .sb-status-row:last-child::before {
+  font-weight: 700;
+  color: var(--muted);
+  display: inline-block;
+  min-width: 18px;
+  text-align: right;
+  margin-right: 1px;
+}
+
+#sidebar.collapsed .sb-status-row:first-child::before {
+  content: "T:";
+}
+
+#sidebar.collapsed .sb-status-row:last-child::before {
+  content: "G:";
+}
+
+#sidebar #tela-status,
+#sidebar #gnomon-status {
+  transition: var(--transition);
+}
+
+#sidebar #tela-status:has(:contains("🟢")),
+#sidebar #gnomon-status:has(:contains("🟢")) {
+  color: var(--success);
+}
+
+#sidebar.collapsed .sb-text {
+  display: none;
+}
+
+/* shrink row to content and center it in collapsed sidebar */
+#sidebar.collapsed .sb-status-row {
+  width: max-content;
+  margin: 0 auto;
 }
 
 /* ===============================
@@ -760,6 +927,36 @@ button.success:hover {
   font-weight: 500;
   color: var(--text-secondary);
 }
+
+/* Container holding the icon */
+.icon-slot {
+  display: flex;
+  align-items: center;      /* vertical centering */
+  justify-content: center;  /* horizontal centering */
+  width: var(--scid-size, 48px);
+  height: var(--scid-size, 48px);
+  position: relative;       /* ensures inner svg can position if needed */
+}
+
+/* SCID SVG scaled 10% smaller than container */
+.scid-svg {
+  width: 90%;   /* 90% of container width */
+  height: 90%;  /* 90% of container height */
+  max-width: 100%;
+  max-height: 100%;
+  color: var(--text);
+  display: block;
+}
+
+/* Dark mode color override */
+[data-theme="dark"] .scid-svg {
+  color: var(--text);
+}
+
+/* scale control per context */
+.result .scid-svg { --scid-size: 48px; }
+#sidebar .scid-svg { --scid-size: 32px; }
+
 
 /* ===============================
    INFO BOXES

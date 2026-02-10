@@ -21,12 +21,15 @@ const bookmarkedNodesEl = document.getElementById("bookmarked-nodes");
 
 const themeToggle = document.getElementById("theme-toggle");
 
+const RT = typeof browser !== "undefined" ? browser : chrome;
+
+
 // ================= STATE =================
 let bookmarks = { scids: {}, nodes: {} };
 let settings = { autostart: false, refreshInterval: 3, defaultNode: "" };
 
 // ================= THEME =================
-const savedTheme = localStorage.getItem("theme") || "light";
+const savedTheme = localStorage.getItem("theme") || "dark";
 document.documentElement.setAttribute("data-theme", savedTheme);
 
 themeToggle.onclick = () => {
@@ -53,8 +56,39 @@ function send(cmd, params = {}) {
 }
 
 function setStatus(el, running) {
-  el.textContent = running ? "🟢 Connected" : "🔴 Stopped";
+  const icon = el.querySelector(".sb-icon");
+  const text = el.querySelector(".sb-text");
+
+  if (!icon || !text) return;
+
+  if (running) {
+    icon.textContent = "🟢";
+    text.textContent = "Connected";
+  } else {
+    icon.textContent = "🔴";
+    text.textContent = "Stopped";
+  }
 }
+
+// ---------------- LIVE SYNC ----------------
+// Make page-server status match sidebar
+function syncServerPageStatus() {
+  const sidebarTela = document.querySelector("#sidebar #tela-status");
+  const sidebarGnomon = document.querySelector("#sidebar #gnomon-status");
+
+  if (!sidebarTela || !sidebarGnomon) return;
+
+  const pageTela = document.querySelector("#page-server #tela-status");
+  const pageGnomon = document.querySelector("#page-server #gnomon-status");
+
+  if (pageTela) pageTela.innerHTML = sidebarTela.innerHTML;
+  if (pageGnomon) pageGnomon.innerHTML = sidebarGnomon.innerHTML;
+}
+
+// Call after every update
+setInterval(syncServerPageStatus, 3000); // every second
+
+// ================= START SVG =================
 
 function createStarSVG() {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -297,4 +331,66 @@ function initBookmarks() {
 document.addEventListener("DOMContentLoaded", () => {
   initBookmarks();
 });
+
+// ================= EXTENSION CLOSE UNIFIED =================
+
+let nativePort = null;
+
+function connectNative() {
+  if (!nativePort) {
+    nativePort = RT.runtime.connectNative("purewolf.native");
+
+    nativePort.onDisconnect.addListener(() => {
+      console.log("Native port disconnected");
+      nativePort = null;
+    });
+  }
+  return nativePort;
+}
+
+function sendNative(msg) {
+  try {
+    const port = connectNative();
+    port.postMessage(msg);
+  } catch (e) {
+    console.warn("Native send failed:", e);
+  }
+}
+
+// ================= CHROME EXTENSION CLOSE =================
+// Chrome-only suspend hook
+
+if (RT.runtime.onSuspend) {
+  RT.runtime.onSuspend.addListener(() => {
+    console.log("Runtime suspended → shutdown native");
+    sendNative({ cmd: "shutdown" });
+  });
+}
+
+
+// ================= FIREFOX EXTENSION CLOSE =================
+// Firefox / UI close fallback (also works in Chrome popups)
+
+RT.runtime.onConnect.addListener(port => {
+  port.onDisconnect.addListener(() => {
+    console.log("Extension UI disconnected → shutdown native");
+    sendNative({ cmd: "shutdown" });
+  });
+});
+
+// Native binary hard-kill safety
+
+while (read_message_from_stdin(msg)) {
+  if (msg.cmd == "shutdown") {
+    stop_all();
+    exit(0);
+  }
+}
+
+// stdin closed → browser died
+stop_all();
+exit(0);
+
+
+
 

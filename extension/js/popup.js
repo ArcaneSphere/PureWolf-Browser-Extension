@@ -1,83 +1,94 @@
-// popup.js
+const RT = typeof browser !== "undefined" ? browser : chrome;
 
-const statusEl = document.getElementById("status");
-const openDashboardBtn = document.getElementById("open-dashboard");
-const startServerBtn = document.getElementById("start-server");
-const stopServerBtn = document.getElementById("stop-server");
+document.addEventListener("DOMContentLoaded", () => {
+  const statusEl = document.getElementById("status");
+  const openDashboardBtn = document.getElementById("open-dashboard");
+  const startServerBtn = document.getElementById("start-server");
+  const stopServerBtn = document.getElementById("stop-server");
 
-// ------------------------
-// Light / Dark / System switching
-// ------------------------
-
-const theme = localStorage.getItem("theme") || "system";
-
-function applyTheme() {
-  if (theme === "system") {
-    document.documentElement.removeAttribute("data-theme");
-  } else {
-    document.documentElement.setAttribute("data-theme", theme);
+  function send(cmd, params = {}) {
+    return RT.runtime.sendMessage({ cmd, params });
   }
-}
 
-applyTheme();
-
-// ------------------------
-// Controls
-// ------------------------
-
-function send(cmd, params = {}) {
-  return browser.runtime.sendMessage({ cmd, params });
-}
-
-async function checkStatus() {
-  try {
-    const r = await send("server_status");
-    if (r && r.ok && r.result) {
-      statusEl.textContent = r.result.running ? "🟢 Server Running" : "🔴 Server Stopped";
-    } else {
-      statusEl.textContent = "⚠ No connection";
+  async function checkStatus() {
+    try {
+      const r = await send("server_status");
+      if (r && r.ok && r.result) {
+        statusEl.textContent = r.result.connected
+          ? "🟢 Server Running"
+          : "🔴 Server Stopped";
+      } else {
+        statusEl.textContent = "⚠ No connection";
+      }
+    } catch (e) {
+      statusEl.textContent = "❌ Error: " + e.message;
     }
-  } catch (e) {
-    statusEl.textContent = "❌ Error: " + e.message;
   }
-}
 
-openDashboardBtn.onclick = () => {
-  const url = browser.runtime.getURL("dashboard/dashboard.html");
-  browser.tabs.create({ url });
-};
+  // ------------------------
+  // Light / Dark / System switching
+  // ------------------------
+  const theme = localStorage.getItem("theme") || "dark";
 
-
-startServerBtn.onclick = async () => {
-  statusEl.textContent = "⏳ Starting...";
-  try {
-    const r = await send("server_start");
-    if (r.ok) {
-      statusEl.textContent = "🟢 Server Started";
+  function applyTheme() {
+    if (theme === "system") {
+      document.documentElement.removeAttribute("data-theme");
     } else {
-      statusEl.textContent = "❌ Failed to start";
+      document.documentElement.setAttribute("data-theme", theme);
     }
-  } catch (e) {
-    statusEl.textContent = "❌ Error: " + e.message;
   }
-  setTimeout(checkStatus, 1000);
-};
 
-stopServerBtn.onclick = async () => {
-  statusEl.textContent = "⏳ Stopping...";
-  try {
-    const r = await send("server_stop");
-    if (r.ok) {
-      statusEl.textContent = "🔴 Server Stopped";
-    } else {
-      statusEl.textContent = "❌ Failed to stop";
-    }
-  } catch (e) {
-    statusEl.textContent = "❌ Error: " + e.message;
+  applyTheme();
+
+  // ------------------------
+  // Button handlers
+  // ------------------------
+  if (openDashboardBtn) {
+    openDashboardBtn.onclick = () => {
+      const url = RT.runtime.getURL("dashboard/dashboard.html");
+      RT.tabs.create({ url });
+    };
   }
-  setTimeout(checkStatus, 1000);
-};
 
-// Check status on load
-checkStatus();
-setInterval(checkStatus, 3000);
+  if (startServerBtn) {
+    startServerBtn.onclick = async () => {
+      statusEl.textContent = "⏳ Starting...";
+      try {
+        const r = await send("server_start");
+        if (r.ok) {
+          statusEl.textContent = "🟢 Server Started";
+        } else {
+          statusEl.textContent = "❌ Failed to start";
+        }
+      } catch (e) {
+        statusEl.textContent = "❌ Error: " + e.message;
+      }
+      setTimeout(checkStatus, 1000);
+    };
+  }
+
+  if (stopServerBtn) {
+    stopServerBtn.onclick = async () => {
+      statusEl.textContent = "⏳ Stopping...";
+      try {
+        const r = await send("server_stop");
+        if (r.ok) {
+          statusEl.textContent = "🔴 Server Stopped";
+        } else {
+          statusEl.textContent = "❌ Failed to stop";
+        }
+      } catch (e) {
+        statusEl.textContent = "❌ Error: " + e.message;
+      }
+      setTimeout(checkStatus, 1000);
+    };
+  }
+
+  window.addEventListener("beforeunload", () => {
+    RT.runtime.sendMessage({ type: "ui_closed" });
+  });
+
+  // Check status on load and repeat
+  checkStatus();
+  setInterval(checkStatus, 3000);
+});

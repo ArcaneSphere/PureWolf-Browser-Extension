@@ -85,7 +85,7 @@ PureWolf requires **two parts**: the browser extension and the native helper.
 -   Go to `about:debugging` → _This Firefox_ → _Load Temporary Add-on_
     
 
-#### ~~Chrome~~
+#### ~~Chrome~~ Comming soon
 
 1.  Open `chrome://extensions/`
     
@@ -225,7 +225,7 @@ MIT License — see `LICENSE`.
 
 ### Recommended Workflow for Users
 
-1.  Install the native helper (`native/install.sh`)
+1.  Install the native helper (`https://github.com/ArcaneSphere/PureWolf-Browser-Extension/releases`)
     
 2.  Load the browser extension for your browser
     
