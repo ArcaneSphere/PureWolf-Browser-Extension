@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "PureWolf - Local TELA services for DERO",
-  "version": "0.9.0",
+  "version": "0.9.3",
   "description": "PureWolf connects Firefox to a user-installed local TELA services for the DERO Homomorphic Encryption Blockchain Protocol using native messaging.",
 
   "icons": {
