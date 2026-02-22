@@ -564,12 +564,15 @@ button.secondary:hover {
 }
 
 button.danger {
-  background: var(--danger);
+  background: var(--panel);
+  color: var(--danger);
+  border: 1px solid var(--border);
 }
 
 button.danger:hover {
-  background: #e53935;
-  box-shadow: var(--shadow-md);
+  background: var(--panel-2);
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 button.small {
@@ -824,8 +827,10 @@ button.success:hover {
 }
 
 #search-btn {
-  border-radius: 24px;
-  padding: 14px 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;              /* space between icon and text */
+  white-space: nowrap;   /* prevent line break */
 }
 
 #results {

@@ -227,7 +227,6 @@
     searchBox.disabled = true;
     await loadSearchSCIDs(); // initial load
     searchBox.disabled = false;
-    watchNodeAndRefresh();
   })();
 
 })();

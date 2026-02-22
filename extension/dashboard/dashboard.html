@@ -51,7 +51,7 @@
     <div id="sidebar-status">
       <div class="sb-status-row">
         <span class="sb-label">TELA</span>
-        <span id="tela-status">
+        <span id="sidebar-tela-status">
           <span class="sb-icon">🔴</span>
           <span class="sb-text">Not connected</span>
         </span>
@@ -59,7 +59,7 @@
 
       <div class="sb-status-row">
         <span class="sb-label">Gnomon</span>
-        <span id="gnomon-status">
+        <span id="sidebar-gnomon-status">
           <span class="sb-icon">🔴</span>
           <span class="sb-text">Not connected</span>
         </span>
@@ -127,17 +127,40 @@
               <!-- TELA Status -->
               <div class="status-row">
                 <strong>TELA:</strong>
-                <span id="tela-status" data-server="tela">🔴 Not connected</span>
+                <span id="page-tela-status" data-server="tela">🔴 Not connected</span>
               </div>
-
+            </div>
+          </div>  
+             <div class="setting-item">
+            <div class="setting-label">Servers Status</div>
+            <div class="controls-column">
               <!-- Gnomon Status -->
               <div class="status-row">
                 <strong>Gnomon:</strong>
-                <span id="gnomon-status" data-server="gnomon">🔴 Not connected</span>
+                <span id="page-gnomon-status" data-server="gnomon">🔴 Not connected</span>
+              </div>
+             <!-- Sync Progress -->
+            <div id="sync-info" style="display:block; margin-top: 8px;">
+              <div class="status-row">
+                <strong>Sync:</strong>
+                <span id="sync-label">Waiting...</span>
+              </div>
+              <div style="margin-top: 4px; background: var(--input-bg, #222); border-radius: 4px; overflow: hidden; height: 8px;">
+                <div id="sync-bar" style="height: 100%; width: 0%; background: var(--accent, #4caf50); transition: width 0.5s ease;"></div>
+              </div>
+              <div style="margin-top: 6px; font-size: 0.8rem; color: var(--text-muted, #888);">
+                <div class="status-row">
+                  <strong>Daemon:</strong>
+                  <span id="daemon-height">—</span>
+                </div>
+                <div class="status-row">
+                  <strong>DB:</strong>
+                  <span id="db-height">—</span>
+                </div>
               </div>
             </div>
           </div>
-
+        </div>
           <p>Servers are started automatically once a node is connected.</p>
         </div>
 
@@ -272,7 +295,7 @@
       <div id="page-about" class="page">
         <h2>About</h2>
         <div class="info-box">
-          <p><strong>Version:</strong> 0.9.0</p>
+          <p><strong>Version:</strong> 0.9.3</p>
           <p><strong>Description:</strong> Browser extension to access TELA's decentralized applications and websites from the DERO blockchain.</p>
         </div>
       </div>

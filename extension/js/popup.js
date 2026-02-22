@@ -6,19 +6,36 @@ document.addEventListener("DOMContentLoaded", () => {
   const startServerBtn = document.getElementById("start-server");
   const stopServerBtn = document.getElementById("stop-server");
 
+  const toggleConnBtn = document.getElementById("toggle-connection");
+
+  // Track whether user has manually disconnected
+  let manuallyDisconnected = false;
+
   function send(cmd, params = {}) {
     return RT.runtime.sendMessage({ cmd, params });
   }
 
   async function checkStatus() {
     try {
-      const r = await send("server_status");
-      if (r && r.ok && r.result) {
-        statusEl.textContent = r.result.connected
-          ? "🟢 Server Running"
-          : "🔴 Server Stopped";
+      // Use native_ping to check if purewolf-native is alive — this works
+      // regardless of whether a node is connected in the dashboard.
+      const ping = await RT.runtime.sendMessage({ cmd: "native_ping" });
+      const alive = ping && ping.ok && ping.alive;
+
+      if (alive) {
+        statusEl.textContent = "🟢 Native Running";
+        if (toggleConnBtn) {
+          toggleConnBtn.textContent = "⏏ Disconnect";
+          toggleConnBtn.dataset.state = "connected";
+        }
       } else {
-        statusEl.textContent = "⚠ No connection";
+        statusEl.textContent = manuallyDisconnected
+          ? "🔴 Disconnected"
+          : "🔴 Native Stopped";
+        if (toggleConnBtn) {
+          toggleConnBtn.textContent = "🔌 Reconnect";
+          toggleConnBtn.dataset.state = "disconnected";
+        }
       }
     } catch (e) {
       statusEl.textContent = "❌ Error: " + e.message;
@@ -43,6 +60,36 @@ document.addEventListener("DOMContentLoaded", () => {
   // ------------------------
   // Button handlers
   // ------------------------
+  if (toggleConnBtn) {
+    toggleConnBtn.onclick = async () => {
+      const state = toggleConnBtn.dataset.state;
+      if (state === "connected") {
+        // Disconnect
+        statusEl.textContent = "⏳ Disconnecting...";
+        manuallyDisconnected = true;
+        try {
+          await RT.runtime.sendMessage({ cmd: "native_disconnect" });
+          statusEl.textContent = "🔴 Disconnected";
+          toggleConnBtn.textContent = "🔌 Reconnect";
+          toggleConnBtn.dataset.state = "disconnected";
+        } catch (e) {
+          statusEl.textContent = "❌ Error: " + e.message;
+        }
+      } else {
+        // Reconnect
+        statusEl.textContent = "⏳ Reconnecting...";
+        manuallyDisconnected = false;
+        try {
+          await RT.runtime.sendMessage({ cmd: "native_reconnect" });
+          setTimeout(checkStatus, 800);
+        } catch (e) {
+          statusEl.textContent = "❌ Error: " + e.message;
+        }
+      }
+    };
+  }
+
+
   if (openDashboardBtn) {
     openDashboardBtn.onclick = () => {
       const url = RT.runtime.getURL("dashboard/dashboard.html");

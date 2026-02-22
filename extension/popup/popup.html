@@ -122,6 +122,28 @@
     border-color: var(--danger);
     color: var(--danger);
   }
+
+  #toggle-connection[data-state="connected"] {
+    background: var(--panel);
+    color: var(--danger, #e05252);
+    border: 1px solid var(--border);
+  }
+
+  #toggle-connection[data-state="connected"]:hover {
+    background: var(--panel-2);
+    border-color: var(--danger, #e05252);
+    color: var(--danger, #e05252);
+  }
+
+  #toggle-connection[data-state="disconnected"] {
+    background: var(--success, #00c087);
+    color: white;
+    border: none;
+  }
+
+  #toggle-connection[data-state="disconnected"]:hover {
+    background: #00a676;
+  }
   </style>
 </head>
 <body>
@@ -136,6 +158,7 @@
   </div>
   <div id="status">⏳ Checking status...</div>
   <button id="open-dashboard">📊 Open Dashboard</button>
+  <button id="toggle-connection" data-state="connected">⏏ Disconnect</button>
   <!-- <button id="start-server">▶ Start Server</button> -->
   <!-- <button id="stop-server">⏹ Stop Server</button> -->
   <script src="../js/popup.js"></script>

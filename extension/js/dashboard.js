@@ -5,8 +5,11 @@ const statusEl = document.getElementById("status");
 const navItems = document.querySelectorAll(".nav-item");
 const pages = document.querySelectorAll(".page");
 
-const telaStatus = document.getElementById("tela-status");
-const gnomonStatus = document.getElementById("gnomon-status");
+const sidebarTelaStatus = document.getElementById("sidebar-tela-status");
+const sidebarGnomonStatus = document.getElementById("sidebar-gnomon-status");
+
+const pageTelaStatus = document.getElementById("page-tela-status");
+const pageGnomonStatus = document.getElementById("page-gnomon-status");
 
 const nodeInput = document.getElementById("node");
 const connectNodeBtn = document.getElementById("connectNodeBtn");
@@ -52,41 +55,22 @@ navItems.forEach(item => {
 
 // ================= HELPERS =================
 function send(cmd, params = {}) {
-  return browser.runtime.sendMessage({ cmd, params });
+  return RT.runtime.sendMessage({ cmd, params });
 }
 
 function setStatus(el, running) {
   const icon = el.querySelector(".sb-icon");
   const text = el.querySelector(".sb-text");
 
-  if (!icon || !text) return;
-
-  if (running) {
-    icon.textContent = "🟢";
-    text.textContent = "Connected";
+  if (icon && text) {
+    // Sidebar format
+    icon.textContent = running ? "🟢" : "🔴";
+    text.textContent = running ? "Connected" : "Stopped";
   } else {
-    icon.textContent = "🔴";
-    text.textContent = "Stopped";
+    // Plain span (page-server)
+    el.textContent = running ? "🟢 Connected" : "🔴 Not connected";
   }
 }
-
-// ---------------- LIVE SYNC ----------------
-// Make page-server status match sidebar
-function syncServerPageStatus() {
-  const sidebarTela = document.querySelector("#sidebar #tela-status");
-  const sidebarGnomon = document.querySelector("#sidebar #gnomon-status");
-
-  if (!sidebarTela || !sidebarGnomon) return;
-
-  const pageTela = document.querySelector("#page-server #tela-status");
-  const pageGnomon = document.querySelector("#page-server #gnomon-status");
-
-  if (pageTela) pageTela.innerHTML = sidebarTela.innerHTML;
-  if (pageGnomon) pageGnomon.innerHTML = sidebarGnomon.innerHTML;
-}
-
-// Call after every update
-setInterval(syncServerPageStatus, 3000); // every second
 
 // ================= START SVG =================
 
@@ -123,29 +107,64 @@ function updateSCIDList(scids) {
   });
 }
 
-// ================= NODE CONNECT =================
+// ================= NODE CONNECT / DISCONNECT =================
+
+function setNodeConnected(connected, node = "") {
+  if (connected) {
+    connectNodeBtn.textContent = "Disconnect";
+    connectNodeBtn.classList.add("danger");
+    nodeInput.disabled = true;
+    statusEl.textContent = `🟢 Connected to ${node || nodeInput.value.trim()}`;
+  } else {
+    connectNodeBtn.textContent = "Connect";
+    connectNodeBtn.classList.remove("danger");
+    nodeInput.disabled = false;
+    resetSyncProgress(); // ← reset sync on any disconnect
+    // Only reset status if not already showing an error
+    if (!statusEl.textContent.startsWith("❌")) {
+      statusEl.textContent = "⏳ Waiting for node...";
+    }
+  }
+}
+
 connectNodeBtn.onclick = async () => {
+  const isConnected = connectNodeBtn.textContent === "Disconnect";
+
+  if (isConnected) {
+    try {
+      await send("disconnect_node");
+    } catch (e) {}
+    setNodeConnected(false);
+    updateStatusIndicators();
+    document.dispatchEvent(new CustomEvent("nodeDisconnected"));
+    return;
+  }
+
   const node = nodeInput.value.trim();
   if (!node) return alert("Enter node first");
 
   statusEl.textContent = "⏳ Connecting...";
+  connectNodeBtn.disabled = true;
 
   try {
     const r = await send("set_node", { node });
-    if (!r.ok) return alert("Failed to connect node: " + r.error);
-
-    statusEl.textContent = `🟢 Connected to ${node}`;
+    if (!r.ok) {
+      statusEl.textContent = "❌ Failed to connect";
+      alert("Failed to connect node: " + r.error);
+      return;
+    }
+    setNodeConnected(true, node);
     updateStatusIndicators();
-
-    // Fire custom event for other scripts
     document.dispatchEvent(new CustomEvent("nodeConnected", { detail: { node } }));
-
     if (typeof saveSettings === "function") saveSettings();
   } catch (e) {
     statusEl.textContent = "❌ Error connecting node";
     alert("Error: " + e.message);
+  } finally {
+    connectNodeBtn.disabled = false;
   }
 };
+
 
 // ================= LOAD SCID =================
 loadBtn.onclick = async () => {
@@ -186,17 +205,60 @@ loadBtn.onclick = async () => {
 async function updateStatusIndicators() {
   try {
     const r = await send("server_status");
-    if (!r.ok) return;
-    const connected = r.result.connected;
+    if (!r?.ok || !r?.result) return;
 
-    setStatus(telaStatus, connected);
-    setStatus(gnomonStatus, connected);
-  } catch {}
+    const { tela, gnomon, connected, node, heights } = r.result;
+
+    if (sidebarTelaStatus) setStatus(sidebarTelaStatus, tela);
+    if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, gnomon);
+    if (pageTelaStatus) setStatus(pageTelaStatus, tela);
+    if (pageGnomonStatus) setStatus(pageGnomonStatus, gnomon);
+
+    // Sync button state from server truth — fixes kill/reconnect desyncs
+    const hasNode = !!node && connected;
+    setNodeConnected(hasNode, node);
+
+    if (heights) updateSyncProgress(heights.indexed, heights.chain);
+
+  } catch (e) {
+    console.warn("Status update failed:", e);
+  }
 }
 
 setInterval(updateStatusIndicators, 5000);
 updateStatusIndicators();
 
+async function autoConnect() {
+  loadSettings();
+  if (!settings.defaultNode) return;
+
+  nodeInput.value = settings.defaultNode;
+  updateBookmarkButtons();
+
+  statusEl.textContent = "⏳ Auto-connecting...";
+  try {
+    const r = await send("set_node", { node: settings.defaultNode });
+    if (r.ok) {
+      setNodeConnected(true, settings.defaultNode);
+      updateStatusIndicators();
+
+      // Request current status immediately so heights aren't blank
+      const status = await send("server_status");
+      if (status.ok && status.result.heights) {
+        updateSyncProgress(status.result.heights.indexed, status.result.heights.chain);
+      }
+
+      document.dispatchEvent(new CustomEvent("nodeConnected", { detail: { node: settings.defaultNode } }));
+    }
+  } catch (e) {
+    statusEl.textContent = "❌ Auto-connect failed";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initBookmarks();
+  autoConnect();
+});
 
 // ================= DEFAULT BOOKMARKS =================
 const defaultBookmarks = {
@@ -378,19 +440,117 @@ RT.runtime.onConnect.addListener(port => {
   });
 });
 
-// Native binary hard-kill safety
+// ================= SETTINGS =================
+function saveSettings() {
+  settings.defaultNode = document.getElementById("setting-default-node").value.trim();
+  localStorage.setItem("purewolf_settings", JSON.stringify(settings));
+}
 
-while (read_message_from_stdin(msg)) {
-  if (msg.cmd == "shutdown") {
-    stop_all();
-    exit(0);
+function loadSettings() {
+  const stored = localStorage.getItem("purewolf_settings");
+  if (stored) settings = JSON.parse(stored);
+
+  const defaultNodeInput = document.getElementById("setting-default-node");
+  if (defaultNodeInput && settings.defaultNode) {
+    defaultNodeInput.value = settings.defaultNode;
   }
 }
 
-// stdin closed → browser died
-stop_all();
-exit(0);
+const saveBtn = document.getElementById("save-settings");
+if (saveBtn) {
+  saveBtn.onclick = () => {
+    saveSettings();
+    alert("Settings saved");
+  };
+}
 
+const resetBtn = document.getElementById("reset-settings");
+if (resetBtn) {
+  resetBtn.onclick = () => {
+    settings = { autostart: false, refreshInterval: 3, defaultNode: "" };
+    localStorage.removeItem("purewolf_settings");
+    const input = document.getElementById("setting-default-node");
+    if (input) input.value = "";
+  };
+}
 
+// ================= SYNC PROGRESS =================
+function updateSyncProgress(indexed, chain) {
+  const syncInfo  = document.getElementById("sync-info");
+  const syncLabel = document.getElementById("sync-label");
+  const syncBar   = document.getElementById("sync-bar");
+  const daemonEl  = document.getElementById("daemon-height");
+  const dbEl      = document.getElementById("db-height");
 
+  if (!syncInfo) return;
 
+  syncInfo.style.display = "block";
+  if (daemonEl) daemonEl.textContent = chain > 0 ? chain.toLocaleString() : "—";
+  if (dbEl)     dbEl.textContent     = indexed > 0 ? indexed.toLocaleString() : "—";
+
+  const pct = chain > 0 ? Math.min(100, (indexed / chain) * 100) : 0;
+  if (syncBar) syncBar.style.width = pct.toFixed(1) + "%";
+
+  if (chain === 0 || indexed === 0) {
+    if (syncLabel) syncLabel.textContent = "Not syncing";
+  } else if (indexed >= chain - 3) {
+    if (syncLabel) syncLabel.textContent = "Synced ✅";
+  } else {
+    if (syncLabel) syncLabel.textContent = pct.toFixed(1) + "% syncing...";
+  }
+}
+
+function clearSyncProgress(height) {
+  const syncLabel = document.getElementById("sync-label");
+  const syncBar   = document.getElementById("sync-bar");
+  if (syncLabel) syncLabel.textContent = "Synced ✅";
+  if (syncBar)   syncBar.style.width = "100%";
+}
+
+function resetSyncProgress() {
+  const syncBar   = document.getElementById("sync-bar");
+  const syncLabel = document.getElementById("sync-label");
+  const daemonEl  = document.getElementById("daemon-height");
+  const dbEl      = document.getElementById("db-height");
+  if (syncBar)   syncBar.style.width = "0%";
+  if (syncLabel) syncLabel.textContent = "Not syncing";
+  if (daemonEl)  daemonEl.textContent = "—";
+  if (dbEl)      dbEl.textContent = "—";
+}
+
+RT.runtime.onMessage.addListener((msg) => {
+  if (msg.event === "sync_progress") {
+    updateSyncProgress(msg.indexed, msg.chain);
+  } else if (msg.event === "sync_complete") {
+    clearSyncProgress(msg.height);
+  } else if (msg.event === "node_unreachable") {
+        statusEl.textContent = `❌ Node unreachable: ${msg.node.replace("http://", "")}`;
+        if (sidebarTelaStatus) setStatus(sidebarTelaStatus, false);
+        if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, false);
+        if (pageTelaStatus) setStatus(pageTelaStatus, false);
+        if (pageGnomonStatus) setStatus(pageGnomonStatus, false);
+        resetSyncProgress();  
+  } else if (msg.cmd === "native_disconnect") {
+    // Native host is being killed — immediately reflect disconnected state
+    if (sidebarTelaStatus) setStatus(sidebarTelaStatus, false);
+    if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, false);
+    if (pageTelaStatus) setStatus(pageTelaStatus, false);
+    if (pageGnomonStatus) setStatus(pageGnomonStatus, false);
+    if (statusEl) statusEl.textContent = "🔴 Disconnected";
+    // Reset sync UI
+    const syncInfo  = document.getElementById("sync-info");
+    const syncBar   = document.getElementById("sync-bar");
+    const syncLabel = document.getElementById("sync-label");
+    const daemonEl  = document.getElementById("daemon-height");
+    const dbEl      = document.getElementById("db-height");
+    if (syncInfo)  syncInfo.style.display = "block";
+    if (syncBar)   syncBar.style.width = "0%";
+    if (syncLabel) syncLabel.textContent = "";
+    if (daemonEl)  daemonEl.textContent = "—";
+    if (dbEl)      dbEl.textContent = "—";
+  } else if (msg.cmd === "native_reconnect") {
+    // Reconnect initiated — show pending state then poll
+    if (statusEl) statusEl.textContent = "⏳ Reconnecting...";
+    setTimeout(updateStatusIndicators, 1000);
+  }
+});
