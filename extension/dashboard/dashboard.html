@@ -14,7 +14,7 @@
       <button id="toggle-sidebar" title="Collapse sidebar">☰</button>
 
       <img id="sidebar-logo" src="../icons/purewolf-96x96.png" alt="PureWolf logo" />
-      <span class="sidebar-title">PureWolf</span>
+      <span class="sidebar-title"></span>
     </div>
 
     <div id="sidebar-nav">
@@ -240,14 +240,14 @@
 
   <div class="info-box">
     <h3>Install Native Helper (Linux/MacOS - Firefox)</h3>
-
     <ol>
-      <li>Check the github releases for the <a href="https://github.com/ArcaneSphere/PureWolf-Browser-Extension/releases" target="_blank"><strong>PureWolf Native</strong></a>
-          easy one-command package installer.</li>
-      <li>Open your Terminal and Run:</li>
-      <li><code>curl -fsSL https://github.com/ArcaneSphere/PureWolf-Browser-Extension/releases/download/v0.9.31/install.sh | bash</code></li>        
+      <li>Open your Terminal and Run:<br>
+      <pre><code>curl -fsSL https://github.com/ArcaneSphere/<br>PureWolf-Browser-Extension/releases/download/v0.9.40/install.sh | bash</code></pre></li>        
       <li><strong>Restart Firefox</strong> after installation.</l1>
-    </ol>
+    </ol>    
+    <p>Visit the github releases page for more information on the <a href="https://github.com/ArcaneSphere/PureWolf-Browser-Extension/releases" target="_blank"><strong>PureWolf Native</strong></a> 
+    easy one-command package installer.</p>
+    
   </div>
 
       <div class="info-box">
@@ -270,15 +270,15 @@
       </p>
 
       <p>
-        Expect loading times from public nodes to be around <strong>3–5 seconds</strong>,
+        Expect SCID loading times from public nodes to be around <strong>0–5 seconds</strong>,
         while local nodes are <strong>nearly instant</strong>.
       </p>
     </div>
 
     <div class="info-box">
       <h3>Status</h3>
-      <p><strong>🟢 Native connected</strong> — everything is working.</p>
-      <p><strong>🔴 Native not found</strong> — native helper is not installed.</p>
+      <p><strong><span class="status-dot connected"></span>Native connected</strong>— everything is working.</p>
+      <p><strong><span class="status-dot error"></span>Native not found</strong>— native helper is not installed.</p>
     </div>
 
     <div class="info-box">
@@ -295,7 +295,7 @@
       <div id="page-about" class="page">
         <h2>About</h2>
         <div class="info-box">
-          <p><strong>Version:</strong> 0.9.31</p>
+          <p><strong>Version:</strong> 0.9.40</p>
           <p><strong>Description:</strong> Browser extension to access TELA's decentralized applications and websites from the DERO blockchain.</p>
         </div>
       </div>

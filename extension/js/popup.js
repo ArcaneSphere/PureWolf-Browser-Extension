@@ -5,45 +5,59 @@ document.addEventListener("DOMContentLoaded", () => {
   const openDashboardBtn = document.getElementById("open-dashboard");
   const startServerBtn = document.getElementById("start-server");
   const stopServerBtn = document.getElementById("stop-server");
-
   const toggleConnBtn = document.getElementById("toggle-connection");
 
-  // Track whether user has manually disconnected
   let manuallyDisconnected = false;
 
   function send(cmd, params = {}) {
     return RT.runtime.sendMessage({ cmd, params });
   }
 
+  // ✅ Create real DOM element instead of HTML string
+  function createDot(state) {
+    const span = document.createElement("span");
+    span.className = `status-dot ${state}`;
+    return span;
+  }
+
+  // ✅ Safe status setter
+  function setStatus(state, message) {
+    statusEl.textContent = ""; // clear safely
+    statusEl.appendChild(createDot(state));
+    statusEl.append(` ${message}`);
+  }
+
   async function checkStatus() {
     try {
-      // Use native_ping to check if purewolf-native is alive — this works
-      // regardless of whether a node is connected in the dashboard.
       const ping = await RT.runtime.sendMessage({ cmd: "native_ping" });
       const alive = ping && ping.ok && ping.alive;
 
       if (alive) {
-        statusEl.textContent = "🟢 Native Running";
+        setStatus("connected", "Native Running");
+
         if (toggleConnBtn) {
           toggleConnBtn.textContent = "⏏ Disconnect";
           toggleConnBtn.dataset.state = "connected";
         }
       } else {
-        statusEl.textContent = manuallyDisconnected
-          ? "🔴 Disconnected"
-          : "🔴 Native Stopped";
+        const label = manuallyDisconnected
+          ? "Disconnected"
+          : "Native Stopped";
+
+        setStatus("error", label);
+
         if (toggleConnBtn) {
           toggleConnBtn.textContent = "🔌 Reconnect";
           toggleConnBtn.dataset.state = "disconnected";
         }
       }
     } catch (e) {
-      statusEl.textContent = "❌ Error: " + e.message;
+      setStatus("error", `Error: ${e.message}`);
     }
   }
 
   // ------------------------
-  // Light / Dark / System switching
+  // Theme
   // ------------------------
   const theme = localStorage.getItem("theme") || "dark";
 
@@ -63,32 +77,34 @@ document.addEventListener("DOMContentLoaded", () => {
   if (toggleConnBtn) {
     toggleConnBtn.onclick = async () => {
       const state = toggleConnBtn.dataset.state;
+
       if (state === "connected") {
-        // Disconnect
-        statusEl.textContent = "⏳ Disconnecting...";
+        setStatus("pending", "Disconnecting...");
         manuallyDisconnected = true;
+
         try {
           await RT.runtime.sendMessage({ cmd: "native_disconnect" });
-          statusEl.textContent = "🔴 Disconnected";
+
+          setStatus("error", "Disconnected");
+
           toggleConnBtn.textContent = "🔌 Reconnect";
           toggleConnBtn.dataset.state = "disconnected";
         } catch (e) {
-          statusEl.textContent = "❌ Error: " + e.message;
+          setStatus("error", `Error: ${e.message}`);
         }
       } else {
-        // Reconnect
-        statusEl.textContent = "⏳ Reconnecting...";
+        setStatus("pending", "Reconnecting...");
         manuallyDisconnected = false;
+
         try {
           await RT.runtime.sendMessage({ cmd: "native_reconnect" });
           setTimeout(checkStatus, 800);
         } catch (e) {
-          statusEl.textContent = "❌ Error: " + e.message;
+          setStatus("error", `Error: ${e.message}`);
         }
       }
     };
   }
-
 
   if (openDashboardBtn) {
     openDashboardBtn.onclick = () => {
@@ -99,34 +115,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (startServerBtn) {
     startServerBtn.onclick = async () => {
-      statusEl.textContent = "⏳ Starting...";
+      setStatus("pending", "Starting...");
+
       try {
         const r = await send("server_start");
+
         if (r.ok) {
-          statusEl.textContent = "🟢 Server Started";
+          setStatus("connected", "Server Started");
         } else {
-          statusEl.textContent = "❌ Failed to start";
+          setStatus("error", "Failed to start");
         }
       } catch (e) {
-        statusEl.textContent = "❌ Error: " + e.message;
+        setStatus("error", `Error: ${e.message}`);
       }
+
       setTimeout(checkStatus, 1000);
     };
   }
 
   if (stopServerBtn) {
     stopServerBtn.onclick = async () => {
-      statusEl.textContent = "⏳ Stopping...";
+      setStatus("pending", "Stopping...");
+
       try {
         const r = await send("server_stop");
+
         if (r.ok) {
-          statusEl.textContent = "🔴 Server Stopped";
+          setStatus("error", "Server Stopped");
         } else {
-          statusEl.textContent = "❌ Failed to stop";
+          setStatus("error", "Failed to stop");
         }
       } catch (e) {
-        statusEl.textContent = "❌ Error: " + e.message;
+        setStatus("error", `Error: ${e.message}`);
       }
+
       setTimeout(checkStatus, 1000);
     };
   }
@@ -135,7 +157,6 @@ document.addEventListener("DOMContentLoaded", () => {
     RT.runtime.sendMessage({ type: "ui_closed" });
   });
 
-  // Check status on load and repeat
   checkStatus();
   setInterval(checkStatus, 3000);
 });

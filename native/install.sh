@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-BASE_URL="https://github.com/ArcaneSphere/PureWolf-Browser-Extension/releases/download/v0.2.0"
+BASE_URL="https://github.com/ArcaneSphere/PureWolf-Browser-Extension/releases/download/v0.9.40"
 
 PUREWOLF_DIR="$HOME/.purewolf"
 MANIFEST_DIR="$HOME/.mozilla/native-messaging-hosts"

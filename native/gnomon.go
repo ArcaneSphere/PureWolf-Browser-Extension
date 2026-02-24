@@ -198,26 +198,25 @@ func startSync(node string) {
 }
 
 func stopSync() {
-	if syncCancel != nil {
-		close(syncCancel)
-		syncCancel = nil
-	}
-	stopIndexer()
-	if err := initDB(); err != nil {
-		log.Printf("stopSync: reinit DB failed: %v", err)
-		return
-	}
-	restartAPIServer()
+    if syncCancel != nil {
+        close(syncCancel)
+        syncCancel = nil
+    }
+    stopIndexer()
+    if err := initDB(); err != nil {
+        log.Printf("stopSync: reinit DB failed: %v", err)
+        return
+    }
+    updateAPIServerDB() // ← just update pointers, don't restart
 }
 
-func restartAPIServer() {
-	apiCfg := &structures.APIConfig{
-		Enabled: true,
-		Listen:  fmt.Sprintf("127.0.0.1:%d", *gnomonPort),
-	}
-	apiServer = api.NewApiServer(apiCfg, gravDB, boltDB, "boltdb")
-	go apiServer.Start()
-	log.Printf("Gnomon API restarted on :%d", *gnomonPort)
+func updateAPIServerDB() {
+    if apiServer == nil {
+        return
+    }
+    apiServer.GravDBBackend = gravDB
+    apiServer.BBSBackend = boltDB
+    log.Printf("API server DB handles updated")
 }
 
 func getChainHeightFromDaemon(node string) int64 {
