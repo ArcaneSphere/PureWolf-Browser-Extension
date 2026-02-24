@@ -489,6 +489,10 @@ code {
 
 pre {
   position: relative;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 70%;
 }
 
 /* Copy button */
