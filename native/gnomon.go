@@ -125,20 +125,45 @@ func startSync(node string) {
 	log.Printf("Indexer started with fastsync, resuming from height %d", lastHeight)
 
 	go func() {
+		// Refresh chain height every 5s independently so progress stays accurate
+		// without hammering the daemon on every progress tick
+		chainRefreshTicker := time.NewTicker(5 * time.Second)
+		defer chainRefreshTicker.Stop()
+
+		go func() {
+			for {
+				select {
+				case <-cancel:
+					return
+				case <-chainRefreshTicker.C:
+					currentChain := getChainHeightFromDaemon(node)
+					if currentChain > targetHeight {
+						targetHeight = currentChain
+					}
+				}
+			}
+		}()
+
 		for {
 			select {
 			case <-cancel:
 				return
-			case <-time.After(3 * time.Second):
+			case <-time.After(500 * time.Millisecond):
 			}
 
+			// During fastsync, BoltDB is only written at completion — Gnomon
+			// buffers in memory. Check GravitonDB which is updated more frequently.
 			indexed, err := boltDB.GetLastIndexHeight()
-			if err != nil {
-				log.Printf("Sync: GetLastIndexHeight error: %v", err)
-				continue
-			}
+			log.Printf("DEBUG boltDB indexed=%d err=%v", indexed, err)
 
-			log.Printf("Sync: indexed=%d target=%d", indexed, targetHeight)
+			if err != nil || indexed == 0 {
+				gravIndexed, gravErr := gravDB.GetLastIndexHeight()
+				log.Printf("DEBUG gravDB indexed=%d err=%v", gravIndexed, gravErr)
+				if gravErr == nil && gravIndexed > indexed {
+					indexed = gravIndexed
+				}
+			}
+			log.Printf("DEBUG final indexed=%d target=%d", indexed, targetHeight)
 			sendMsg(map[string]any{
 				"event":   "sync_progress",
 				"indexed": indexed,
@@ -198,25 +223,25 @@ func startSync(node string) {
 }
 
 func stopSync() {
-    if syncCancel != nil {
-        close(syncCancel)
-        syncCancel = nil
-    }
-    stopIndexer()
-    if err := initDB(); err != nil {
-        log.Printf("stopSync: reinit DB failed: %v", err)
-        return
-    }
-    updateAPIServerDB() // ← just update pointers, don't restart
+	if syncCancel != nil {
+		close(syncCancel)
+		syncCancel = nil
+	}
+	stopIndexer()
+	if err := initDB(); err != nil {
+		log.Printf("stopSync: reinit DB failed: %v", err)
+		return
+	}
+	updateAPIServerDB()
 }
 
 func updateAPIServerDB() {
-    if apiServer == nil {
-        return
-    }
-    apiServer.GravDBBackend = gravDB
-    apiServer.BBSBackend = boltDB
-    log.Printf("API server DB handles updated")
+	if apiServer == nil {
+		return
+	}
+	apiServer.GravDBBackend = gravDB
+	apiServer.BBSBackend = boltDB
+	log.Printf("API server DB handles updated")
 }
 
 func getChainHeightFromDaemon(node string) int64 {

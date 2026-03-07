@@ -44,13 +44,27 @@ themeToggle.onclick = () => {
 // ================= NAV =================
 toggleSidebarBtn.onclick = () => sidebar.classList.toggle("collapsed");
 
+function navigateTo(page) {
+  navItems.forEach(n => n.classList.remove("active"));
+  pages.forEach(p => p.classList.remove("active"));
+  const navItem = document.querySelector(`[data-page=${page}]`);
+  const pageEl  = document.getElementById(`page-${page}`);
+  if (navItem) navItem.classList.add("active");
+  if (pageEl)  pageEl.classList.add("active");
+}
+
 navItems.forEach(item => {
-  item.onclick = () => {
-    navItems.forEach(n => n.classList.remove("active"));
-    pages.forEach(p => p.classList.remove("active"));
-    item.classList.add("active");
-    document.getElementById(`page-${item.dataset.page}`).classList.add("active");
-  };
+  item.onclick = () => navigateTo(item.dataset.page);
+});
+
+// Wire up all internal nav links — avoids CSP issues with inline onclick
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("a.nav-link[data-target]").forEach(a => {
+    a.addEventListener("click", e => {
+      e.preventDefault();
+      navigateTo(a.dataset.target);
+    });
+  });
 });
 
 // ================= HELPERS =================
@@ -272,8 +286,10 @@ document.addEventListener("DOMContentLoaded", () => {
 // ================= DEFAULT BOOKMARKS =================
 const defaultBookmarks = {
   nodes: {
-    "192.168.1.154:10102": { node: "192.168.1.154:10102", label: "Local Node" },
-    "dero-node.net:10102": { node: "dero-node.net:10102", label: "Public Node" }
+    "127.0.0.1:10102": { node: "127.0.0.1:10102", label: "Local Node (default)" },
+    "dero.geeko.cloud:10102": { node: "dero.geeko.cloud:10102", label: "Public Node" },
+    "node.derofoundation.org:11012": { node: "node.derofoundation.org:11012", label: "Public Node" },
+    "192.168.1.154:10102": { node: "192.168.1.154:10102", label: "PureWolf Devs" }
   },
   scids: {
     "a6832a5a09b82dc4b1034fd726b118da1df8ca9ad33e76bee4563e3f69d1d99a": {
@@ -395,10 +411,6 @@ function initBookmarks() {
   updateBookmarkButtons();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  initBookmarks();
-});
-
 // ================= EXTENSION CLOSE UNIFIED =================
 
 let nativePort = null;
@@ -515,41 +527,66 @@ function updateSyncProgress(indexed, chain) {
   const daemonEl  = document.getElementById("daemon-height");
   const dbEl      = document.getElementById("db-height");
 
-  if (!syncInfo) return;
+  if (!syncInfo) { console.log("[sync] sync-info element not found!"); return; }
 
   syncInfo.style.display = "block";
-  if (daemonEl) daemonEl.textContent = chain > 0 ? chain.toLocaleString() : "—";
-  if (dbEl)     dbEl.textContent     = indexed > 0 ? indexed.toLocaleString() : "—";
+  if (daemonEl) daemonEl.textContent = chain.toLocaleString();
+  if (dbEl)     dbEl.textContent     = indexed.toLocaleString();
 
   const pct = chain > 0 ? Math.min(100, (indexed / chain) * 100) : 0;
   if (syncBar) syncBar.style.width = pct.toFixed(1) + "%";
 
-  if (chain === 0 || indexed === 0) {
-    if (syncLabel) setDotText(syncLabel, "error", "Not syncing");
-  } else if (indexed >= chain - 3) {
-    if (syncLabel) setDotText(syncLabel, "connected", "Synced");
+  const wasSyncing = syncLabel && !syncLabel.textContent.includes("Synced");
+
+  if (indexed >= chain - 3) {
+    if (syncLabel) syncLabel.textContent = "Synced";
+    // First time we hit synced — auto-reload search SCIDs
+    if (wasSyncing && typeof window.loadSearchSCIDs === "function") {
+      window.loadSearchSCIDs();
+    }
   } else {
-    if (syncLabel) setDotText(syncLabel, "pending", pct.toFixed(1) + "% syncing...");
+    if (syncLabel) syncLabel.textContent = pct.toFixed(1) + "% synced";
   }
 }
 
-function clearSyncProgress() {
+function clearSyncProgress(height) {
   const syncLabel = document.getElementById("sync-label");
   const syncBar   = document.getElementById("sync-bar");
-  if (syncLabel) setDotText(syncLabel, "connected", "Synced");
+  const wasSyncing = syncLabel && !syncLabel.textContent.includes("Synced");
+  if (syncLabel) syncLabel.textContent = "Synced";
   if (syncBar)   syncBar.style.width = "100%";
+  // Auto-reload search SCIDs on sync_complete event
+  if (wasSyncing && typeof window.loadSearchSCIDs === "function") {
+    window.loadSearchSCIDs();
+  }
 }
 
-function resetSyncProgress() {
-  const syncBar   = document.getElementById("sync-bar");
-  const syncLabel = document.getElementById("sync-label");
-  const daemonEl  = document.getElementById("daemon-height");
-  const dbEl      = document.getElementById("db-height");
-  if (syncBar)   syncBar.style.width = "0%";
-  if (syncLabel) setDotText(syncLabel, "error", "Not syncing");
-  if (daemonEl)  daemonEl.textContent = "—";
-  if (dbEl)      dbEl.textContent = "—";
-}
+RT.runtime.onMessage.addListener((msg) => {
+  if (msg.event === "sync_progress") {
+    updateSyncProgress(msg.indexed, msg.chain);
+  } else if (msg.event === "sync_complete") {
+    clearSyncProgress(msg.height);
+  } else if (msg.cmd === "native_disconnect") {
+    if (sidebarTelaStatus) setStatus(sidebarTelaStatus, false);
+    if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, false);
+    if (pageTelaStatus) setStatus(pageTelaStatus, false);
+    if (pageGnomonStatus) setStatus(pageGnomonStatus, false);
+    if (statusEl) statusEl.textContent = "🔴 Disconnected";
+    const syncInfo  = document.getElementById("sync-info");
+    const syncBar   = document.getElementById("sync-bar");
+    const syncLabel = document.getElementById("sync-label");
+    const daemonEl  = document.getElementById("daemon-height");
+    const dbEl      = document.getElementById("db-height");
+    if (syncInfo)  syncInfo.style.display = "none";
+    if (syncBar)   syncBar.style.width = "0%";
+    if (syncLabel) syncLabel.textContent = "";
+    if (daemonEl)  daemonEl.textContent = "—";
+    if (dbEl)      dbEl.textContent = "—";
+  } else if (msg.cmd === "native_connect") {
+    autoConnect();
+    startSyncPolling();
+  }
+});
 
 // ================= MESSAGE LISTENER =================
 RT.runtime.onMessage.addListener((msg) => {
@@ -558,26 +595,30 @@ RT.runtime.onMessage.addListener((msg) => {
 
   } else if (msg.event === "sync_complete") {
     clearSyncProgress();
+    // Auto-reload search SCIDs now that sync is done
+    if (typeof window.loadSearchSCIDs === "function") {
+      window.loadSearchSCIDs();
+    }  
 
-  } else if (msg.event === "node_unreachable") {
-    const nodeStr = typeof msg.node === "string" ? msg.node.replace("http://", "") : "";
-    setDotText(statusEl, "warning", "Node unreachable: " + nodeStr);
-    if (sidebarTelaStatus) setStatus(sidebarTelaStatus, false);
-    if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, false);
-    if (pageTelaStatus) setStatus(pageTelaStatus, false);
-    if (pageGnomonStatus) setStatus(pageGnomonStatus, false);
-    resetSyncProgress();
+    } else if (msg.event === "node_unreachable") {
+      const nodeStr = typeof msg.node === "string" ? msg.node.replace("http://", "") : "";
+      setDotText(statusEl, "warning", "Node unreachable: " + nodeStr);
+      if (sidebarTelaStatus) setStatus(sidebarTelaStatus, false);
+      if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, false);
+      if (pageTelaStatus) setStatus(pageTelaStatus, false);
+      if (pageGnomonStatus) setStatus(pageGnomonStatus, false);
+      resetSyncProgress();
 
-  } else if (msg.cmd === "native_disconnect") {
-    if (sidebarTelaStatus) setStatus(sidebarTelaStatus, false);
-    if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, false);
-    if (pageTelaStatus) setStatus(pageTelaStatus, false);
-    if (pageGnomonStatus) setStatus(pageGnomonStatus, false);
-    if (statusEl) setDotText(statusEl, "error", "Disconnected");
-    resetSyncProgress();
+    } else if (msg.cmd === "native_disconnect") {
+      if (sidebarTelaStatus) setStatus(sidebarTelaStatus, false);
+      if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, false);
+      if (pageTelaStatus) setStatus(pageTelaStatus, false);
+      if (pageGnomonStatus) setStatus(pageGnomonStatus, false);
+      if (statusEl) setDotText(statusEl, "error", "Disconnected");
+      resetSyncProgress();
 
-  } else if (msg.cmd === "native_reconnect") {
-    if (statusEl) setDotText(statusEl, "pending", "Reconnecting...");
-    setTimeout(updateStatusIndicators, 1000);
-  }
+    } else if (msg.cmd === "native_connect") {
+      if (statusEl) setDotText(statusEl, "pending", "Connecting...");
+      setTimeout(updateStatusIndicators, 1000);
+    }
 });

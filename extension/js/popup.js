@@ -7,8 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const stopServerBtn = document.getElementById("stop-server");
   const toggleConnBtn = document.getElementById("toggle-connection");
 
-  let manuallyDisconnected = false;
-
   function send(cmd, params = {}) {
     return RT.runtime.sendMessage({ cmd, params });
   }
@@ -40,14 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
           toggleConnBtn.dataset.state = "connected";
         }
       } else {
-        const label = manuallyDisconnected
-          ? "Disconnected"
-          : "Native Stopped";
-
-        setStatus("error", label);
+        setStatus("error", "Not Running");
 
         if (toggleConnBtn) {
-          toggleConnBtn.textContent = "🔌 Reconnect";
+          toggleConnBtn.textContent = "🔌 Connect";
           toggleConnBtn.dataset.state = "disconnected";
         }
       }
@@ -80,24 +74,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (state === "connected") {
         setStatus("pending", "Disconnecting...");
-        manuallyDisconnected = true;
-
         try {
           await RT.runtime.sendMessage({ cmd: "native_disconnect" });
 
           setStatus("error", "Disconnected");
 
-          toggleConnBtn.textContent = "🔌 Reconnect";
+          toggleConnBtn.textContent = "🔌 Connect";
           toggleConnBtn.dataset.state = "disconnected";
         } catch (e) {
           setStatus("error", `Error: ${e.message}`);
         }
       } else {
-        setStatus("pending", "Reconnecting...");
-        manuallyDisconnected = false;
-
+        setStatus("pending", "Connecting...");
         try {
-          await RT.runtime.sendMessage({ cmd: "native_reconnect" });
+          await RT.runtime.sendMessage({ cmd: "native_connect" });
           setTimeout(checkStatus, 800);
         } catch (e) {
           setStatus("error", `Error: ${e.message}`);

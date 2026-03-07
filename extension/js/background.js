@@ -3,16 +3,10 @@ const RT = typeof browser !== "undefined" ? browser : chrome;
 
 let nativePort = null;
 let pending = {};
-let reconnectTimer = null;
-
-let userDisconnected = false;
-
 function connectNative() {
   if (nativePort) return;
 
   console.log("[native] connecting…");
-  userDisconnected = false;
-
   try {
     nativePort = RT.runtime.connectNative("com.purewolf");
 
@@ -21,7 +15,8 @@ function connectNative() {
 
   } catch (e) {
     console.error("[native] connect failed", e);
-    scheduleReconnect();
+    // Broadcast failure so popup reflects it
+    RT.runtime.sendMessage({ cmd: "native_disconnect" }).catch(() => {});
   }
 }
 
@@ -44,17 +39,8 @@ function onNativeMessage(msg) {
 function onNativeDisconnect() {
   console.warn("[native] disconnected", RT.runtime.lastError);
   nativePort = null;
-  if (!userDisconnected) {
-    scheduleReconnect();
-  }
-}
-
-function scheduleReconnect() {
-  if (reconnectTimer) return;
-  reconnectTimer = setTimeout(() => {
-    reconnectTimer = null;
-    connectNative();
-  }, 1000);
+  // Broadcast so dashboard/popup reflect the stopped state
+  RT.runtime.sendMessage({ cmd: "native_disconnect" }).catch(() => {});
 }
 
 // Send to native
@@ -95,12 +81,6 @@ RT.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   // Disconnect: kill the native host and clear the port
   if (msg.cmd === "native_disconnect") {
-    userDisconnected = true;
-    // Cancel any pending reconnect so we stay disconnected
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
-    }
     if (nativePort) {
       // Send shutdown via the proper protocol envelope the native host expects,
       // then force-disconnect the port after a short grace period
@@ -117,11 +97,11 @@ RT.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
 
-  // Reconnect: re-establish native connection
-  if (msg.cmd === "native_reconnect") {
+  // Connect: start the native host
+  if (msg.cmd === "native_connect") {
     connectNative();
-    // Broadcast to dashboard so it can show reconnecting state
-    RT.runtime.sendMessage({ cmd: "native_reconnect" }).catch(() => {});
+    // Broadcast to dashboard so it can show connecting state
+    RT.runtime.sendMessage({ cmd: "native_connect" }).catch(() => {});
     sendResponse({ ok: true });
     return;
   }
@@ -168,4 +148,4 @@ if (RT.runtime.onConnect) {
 
 /* ===================== START ===================== */
 
-connectNative();
+// No autostart — user connects/disconnects explicitly via the popup.

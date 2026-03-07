@@ -994,6 +994,7 @@ button.success:hover {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
+  cursor: pointer;
 }
 
 .nameHdr {
