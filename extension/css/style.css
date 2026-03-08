@@ -1258,6 +1258,22 @@ button.success:hover {
   background: var(--accent);
 }
 
+
+/* ===============================
+   GNOMON SYNCBAR
+================================ */
+
+
+#sync-bar.indeterminate {
+  width: 30% !important;
+  animation: indeterminate-slide 1.4s ease-in-out infinite;
+}
+
+@keyframes indeterminate-slide {
+  0%   { margin-left: -30%; }
+  100% { margin-left: 100%; }
+}
+
 /* ===============================
    RESPONSIVE
 ================================ */

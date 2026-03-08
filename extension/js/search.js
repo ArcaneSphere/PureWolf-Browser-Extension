@@ -218,7 +218,11 @@
       scidInput.dispatchEvent(new Event("input"));
     }
     if (window.selectSCID) window.selectSCID(scid);
-    if (loadBtn) loadBtn.click();
+    // Read directLoad setting exposed by dashboard.js (default: true)
+    const directLoad = typeof window.getDirectLoadSetting === "function"
+      ? window.getDirectLoadSetting()
+      : true;
+    if (directLoad && loadBtn) loadBtn.click();
   }
 
   // -------------------- Filter --------------------

@@ -29,7 +29,8 @@ const RT = typeof browser !== "undefined" ? browser : chrome;
 
 // ================= STATE =================
 let bookmarks = { scids: {}, nodes: {} };
-let settings = { autostart: false, refreshInterval: 3, defaultNode: "" };
+let settings = { autostart: false, refreshInterval: 3, defaultNode: "", directLoad: true };
+window.getDirectLoadSetting = () => settings.directLoad !== false;
 
 // ================= THEME =================
 const savedTheme = localStorage.getItem("theme") || "dark";
@@ -452,6 +453,8 @@ RT.runtime.onConnect.addListener(port => {
 
 // ================= SETTINGS =================
 function saveSettings() {
+  const directLoadInput = document.getElementById("setting-direct-load");
+  if (directLoadInput) settings.directLoad = directLoadInput.checked;
   settings.defaultNode = document.getElementById("setting-default-node").value.trim();
   localStorage.setItem("purewolf_settings", JSON.stringify(settings));
 }
@@ -464,6 +467,18 @@ function loadSettings() {
   if (defaultNodeInput && settings.defaultNode) {
     defaultNodeInput.value = settings.defaultNode;
   }
+
+  const directLoadInput = document.getElementById("setting-direct-load");
+  if (directLoadInput) directLoadInput.checked = settings.directLoad !== false;
+}
+
+const directLoadCheckbox = document.getElementById("setting-direct-load");
+if (directLoadCheckbox) {
+  directLoadCheckbox.onchange = () => {
+    settings.directLoad = directLoadCheckbox.checked;
+    localStorage.setItem("purewolf_settings", JSON.stringify(settings));
+    console.log("[settings] directLoad saved:", settings.directLoad);
+  };
 }
 
 const saveBtn = document.getElementById("save-settings");
@@ -477,7 +492,9 @@ if (saveBtn) {
 const resetBtn = document.getElementById("reset-settings");
 if (resetBtn) {
   resetBtn.onclick = () => {
-    settings = { autostart: false, refreshInterval: 3, defaultNode: "" };
+    settings = { autostart: false, refreshInterval: 3, defaultNode: "", directLoad: true };
+    const directLoadInput = document.getElementById("setting-direct-load");
+    if (directLoadInput) directLoadInput.checked = true;
     localStorage.removeItem("purewolf_settings");
     const input = document.getElementById("setting-default-node");
     if (input) input.value = "";
@@ -520,6 +537,8 @@ function addCopyButtons() {
 document.addEventListener("DOMContentLoaded", addCopyButtons);
 
 // ================= SYNC PROGRESS =================
+let syncStartHeight = null;
+
 function updateSyncProgress(indexed, chain) {
   const syncInfo  = document.getElementById("sync-info");
   const syncLabel = document.getElementById("sync-label");
@@ -530,63 +549,57 @@ function updateSyncProgress(indexed, chain) {
   if (!syncInfo) { console.log("[sync] sync-info element not found!"); return; }
 
   syncInfo.style.display = "block";
-  if (daemonEl) daemonEl.textContent = chain.toLocaleString();
-  if (dbEl)     dbEl.textContent     = indexed.toLocaleString();
-
-  const pct = chain > 0 ? Math.min(100, (indexed / chain) * 100) : 0;
-  if (syncBar) syncBar.style.width = pct.toFixed(1) + "%";
+  if (daemonEl) daemonEl.textContent = chain > 0 ? chain.toLocaleString() : "—";
+  if (dbEl)     dbEl.textContent     = indexed > 0 ? indexed.toLocaleString() : "—";
 
   const wasSyncing = syncLabel && !syncLabel.textContent.includes("Synced");
 
-  if (indexed >= chain - 3) {
+  if (indexed >= chain - 3 && chain > 0) {
+    syncStartHeight = null;
+    if (syncBar) { syncBar.classList.remove("indeterminate"); syncBar.style.width = "100%"; }
     if (syncLabel) syncLabel.textContent = "Synced";
-    // First time we hit synced — auto-reload search SCIDs
     if (wasSyncing && typeof window.loadSearchSCIDs === "function") {
       window.loadSearchSCIDs();
     }
+  } else if (indexed === 0 && chain > 0) {
+    syncStartHeight = null;
+    if (syncBar) { syncBar.style.width = "0%"; syncBar.classList.add("indeterminate"); }
+    if (syncLabel) syncLabel.textContent = "⏳ Indexing...";
   } else {
+    if (syncStartHeight === null) syncStartHeight = indexed;
+    const total = chain - syncStartHeight;
+    const done  = indexed - syncStartHeight;
+    const pct   = total > 0 ? Math.min(100, (done / total) * 100) : 0;
+    if (syncBar) { syncBar.classList.remove("indeterminate"); syncBar.style.width = pct.toFixed(1) + "%"; }
     if (syncLabel) syncLabel.textContent = pct.toFixed(1) + "% synced";
   }
 }
 
-function clearSyncProgress(height) {
+function clearSyncProgress() {
+  syncStartHeight = null;
   const syncLabel = document.getElementById("sync-label");
   const syncBar   = document.getElementById("sync-bar");
   const wasSyncing = syncLabel && !syncLabel.textContent.includes("Synced");
+  if (syncBar)   { syncBar.classList.remove("indeterminate"); syncBar.style.width = "100%"; }
   if (syncLabel) syncLabel.textContent = "Synced";
-  if (syncBar)   syncBar.style.width = "100%";
-  // Auto-reload search SCIDs on sync_complete event
   if (wasSyncing && typeof window.loadSearchSCIDs === "function") {
     window.loadSearchSCIDs();
   }
 }
 
-RT.runtime.onMessage.addListener((msg) => {
-  if (msg.event === "sync_progress") {
-    updateSyncProgress(msg.indexed, msg.chain);
-  } else if (msg.event === "sync_complete") {
-    clearSyncProgress(msg.height);
-  } else if (msg.cmd === "native_disconnect") {
-    if (sidebarTelaStatus) setStatus(sidebarTelaStatus, false);
-    if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, false);
-    if (pageTelaStatus) setStatus(pageTelaStatus, false);
-    if (pageGnomonStatus) setStatus(pageGnomonStatus, false);
-    if (statusEl) statusEl.textContent = "🔴 Disconnected";
-    const syncInfo  = document.getElementById("sync-info");
-    const syncBar   = document.getElementById("sync-bar");
-    const syncLabel = document.getElementById("sync-label");
-    const daemonEl  = document.getElementById("daemon-height");
-    const dbEl      = document.getElementById("db-height");
-    if (syncInfo)  syncInfo.style.display = "none";
-    if (syncBar)   syncBar.style.width = "0%";
-    if (syncLabel) syncLabel.textContent = "";
-    if (daemonEl)  daemonEl.textContent = "—";
-    if (dbEl)      dbEl.textContent = "—";
-  } else if (msg.cmd === "native_connect") {
-    autoConnect();
-    startSyncPolling();
-  }
-});
+function resetSyncProgress() {
+  syncStartHeight = null;
+  const syncInfo  = document.getElementById("sync-info");
+  const syncBar   = document.getElementById("sync-bar");
+  const syncLabel = document.getElementById("sync-label");
+  const daemonEl  = document.getElementById("daemon-height");
+  const dbEl      = document.getElementById("db-height");
+  if (syncInfo)  syncInfo.style.display = "none";
+  if (syncBar)   { syncBar.classList.remove("indeterminate"); syncBar.style.width = "0%"; }
+  if (syncLabel) syncLabel.textContent = "";
+  if (daemonEl)  daemonEl.textContent = "—";
+  if (dbEl)      dbEl.textContent = "—";
+}
 
 // ================= MESSAGE LISTENER =================
 RT.runtime.onMessage.addListener((msg) => {
@@ -595,30 +608,26 @@ RT.runtime.onMessage.addListener((msg) => {
 
   } else if (msg.event === "sync_complete") {
     clearSyncProgress();
-    // Auto-reload search SCIDs now that sync is done
-    if (typeof window.loadSearchSCIDs === "function") {
-      window.loadSearchSCIDs();
-    }  
 
-    } else if (msg.event === "node_unreachable") {
-      const nodeStr = typeof msg.node === "string" ? msg.node.replace("http://", "") : "";
-      setDotText(statusEl, "warning", "Node unreachable: " + nodeStr);
-      if (sidebarTelaStatus) setStatus(sidebarTelaStatus, false);
-      if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, false);
-      if (pageTelaStatus) setStatus(pageTelaStatus, false);
-      if (pageGnomonStatus) setStatus(pageGnomonStatus, false);
-      resetSyncProgress();
+  } else if (msg.event === "node_unreachable") {
+    const nodeStr = typeof msg.node === "string" ? msg.node.replace("http://", "") : "";
+    setDotText(statusEl, "warning", "Node unreachable: " + nodeStr);
+    if (sidebarTelaStatus) setStatus(sidebarTelaStatus, false);
+    if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, false);
+    if (pageTelaStatus) setStatus(pageTelaStatus, false);
+    if (pageGnomonStatus) setStatus(pageGnomonStatus, false);
+    resetSyncProgress();
 
-    } else if (msg.cmd === "native_disconnect") {
-      if (sidebarTelaStatus) setStatus(sidebarTelaStatus, false);
-      if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, false);
-      if (pageTelaStatus) setStatus(pageTelaStatus, false);
-      if (pageGnomonStatus) setStatus(pageGnomonStatus, false);
-      if (statusEl) setDotText(statusEl, "error", "Disconnected");
-      resetSyncProgress();
+  } else if (msg.cmd === "native_disconnect") {
+    if (sidebarTelaStatus) setStatus(sidebarTelaStatus, false);
+    if (sidebarGnomonStatus) setStatus(sidebarGnomonStatus, false);
+    if (pageTelaStatus) setStatus(pageTelaStatus, false);
+    if (pageGnomonStatus) setStatus(pageGnomonStatus, false);
+    if (statusEl) setDotText(statusEl, "error", "Disconnected");
+    resetSyncProgress();
 
-    } else if (msg.cmd === "native_connect") {
-      if (statusEl) setDotText(statusEl, "pending", "Connecting...");
-      setTimeout(updateStatusIndicators, 1000);
-    }
+  } else if (msg.cmd === "native_connect") {
+    autoConnect();
+    startSyncPolling();
+  }
 });

@@ -212,10 +212,17 @@
         <div class="setting-item">
           <div class="setting-label">Default Node</div>
           <input type="text" id="setting-default-node" placeholder="e.g. 127.0.0.1:10102">
+          <div class="controls">
+            <button id="save-settings">💾 Save Settings</button>
+            <button id="reset-settings" class="secondary">🔄 Reset to Defaults</button>
+          </div>
         </div>
-        <div class="controls">
-          <button id="save-settings">💾 Save Settings</button>
-          <button id="reset-settings" class="secondary">🔄 Reset to Defaults</button>
+        <div class="setting-item">
+          <div class="setting-label">Direct Load SCIDs</div>
+          <label class="toggle" style="display: flex; align-items: center; gap: 8px;">
+            <span style="white-space: nowrap;">Automatically load SCID on click in search results</span>
+            <input type="checkbox" id="setting-direct-load" checked>
+          </label>
         </div>
       </div>
 
@@ -293,6 +300,15 @@
         <div class="info-box">
           <p><strong>Version:</strong> 0.9.5</p>
           <p><strong>Description:</strong> Browser extension to access TELA's decentralized applications and websites from the DERO blockchain.</p>
+        </div>
+        <div class="info-box">
+          <p><strong>DERO</strong></p>
+          <p>Dero Foundation: <a href="https://www.derofoundation.org/" target="_blank"><strong>derofoundation.org</strong></a></p>
+          <p>Quick Reference Guide: <a href="https://derod.org/" target="_blank"><strong>derod.org</strong></a></p>
+          <p>Local Node: <a href="https://dero.world/anotherworld/how-and-why-would-you-run-a-full-node/" target="_blank"><strong>How to run your own node?</strong></a></p>
+          <p>Wallet: <a href="https://github.com/DEROFDN/Engram/releases" target="_blank"><strong>Engram GUI Wallet</strong></a></p>
+          <p>Github | Dero Project: <a href="https://github.com/deroproject" target="_blank"><strong>github.com/deroproject</strong></a></p>
+          <p>Github | PureWolf: <a href="https://github.com/ArcaneSphere/PureWolf-Browser-Extension" target="_blank"><strong>github.com/ArcaneSphere/PureWolf-Browser-Extension</strong></a></p>
         </div>
       </div>
     </div>
