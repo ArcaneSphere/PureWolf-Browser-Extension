@@ -17,7 +17,7 @@ With PureWolf you can:
 PureWolf works on **Firefox and ~~Chrome~~** and installs safely in your **user folder only**.
 
 To start using **PureWolf** install the browser extension for your browser
-    Firefox: *[Firefox add-on](`https://addons.mozilla.org/en-US/firefox/addon/purewolf/?utm_source=addons.mozilla.org&utm_medium=referral&utm_content=search`)*
+    Firefox: *[Firefox add-on](https://addons.mozilla.org/en-US/firefox/addon/purewolf/?utm_source=addons.mozilla.org&utm_medium=referral&utm_content=search)*
 
 After install run the extension and follow the help instructions in the dashboard to install the native helper.
 
