@@ -217,7 +217,7 @@ MIT License — see `LICENSE`.
 ### Recommended Workflow for Users
 
 1.  Install and Load the browser extension for your browser
-    Firefox: *[Firefox add-on](https://addons.mozilla.org/en-US/firefox/addon/purewolf/?utm_source=addons.mozilla.org&utm_medium=referral&utm_content=search)*
+    > Firefox: *[Firefox add-on](https://addons.mozilla.org/en-US/firefox/addon/purewolf/?utm_source=addons.mozilla.org&utm_medium=referral&utm_content=search)*
 
 2.  Install the native helper via *[Releases](https://github.com/ArcaneSphere/PureWolf-Browser-Extension/releases)*
     
