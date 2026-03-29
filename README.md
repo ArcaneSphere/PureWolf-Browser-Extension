@@ -22,6 +22,7 @@ To start using **PureWolf** install the browser extension for your browser
 After install run the extension and follow the help instructions in the dashboard to install the native helper.
 
 ----------
+![PureWolf Screenshot](assets/pop-up - dashboard - server status.png)
 
 ## Features
 
@@ -223,5 +224,5 @@ MIT License — see `LICENSE`.
     
 3.  Connect a node
     
-4.  Browse Tela sites and SCIDs directly from DERO 🚀
+4.  Browse Tela sites and SCIDs directly from the DERO blockchain 🚀
 
