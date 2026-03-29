@@ -14,13 +14,18 @@ With PureWolf you can:
 -   🖥️ Serve sites locally — no gateways, no proxies, no fake web
     
 
-PureWolf works on **Firefox, Chrome, and Edge** and installs safely in your **user folder only**.
+PureWolf works on **Firefox and ~~Chrome~~** and installs safely in your **user folder only**.
+
+To start using **PureWolf** install the browser extension for your browser
+    Firefox: *[Firefox add-on](`https://addons.mozilla.org/en-US/firefox/addon/purewolf/?utm_source=addons.mozilla.org&utm_medium=referral&utm_content=search`)*
+
+After install run the extension and follow the help instructions in the dashboard to install the native helper.
 
 ----------
 
 ## Features
 
--   Cross-browser support (Firefox, Chrome, Edge)
+-   Cross-browser support (Firefox, Chrome)
     
 -   Go-based native helper (`purewolf-native`)
     
@@ -51,8 +56,7 @@ purewolf/
 │
 ├── browsers/                   # Browser-specific manifests
 │   ├── firefox/manifest.json
-│   ├── chrome/manifest.json
-│   └── edge/manifest.json
+│   └── chrome/manifest.json
 │
 ├── native/                     # Native helper
 │   ├── main.go                 # Go entry point
@@ -94,17 +98,6 @@ PureWolf requires **two parts**: the browser extension and the native helper.
 3.  Click **Load unpacked**
     
 4.  Select `browsers/chrome/`
-    
-
-#### ~~Edge~~
-
-1.  Open `edge://extensions/`
-    
-2.  Enable **Developer mode**
-    
-3.  Click **Load unpacked**
-    
-4.  Select `browsers/edge/`
     
 
 > ⚠️ Only load the folder for your browser. The extension code is shared — the manifest controls browser-specific behavior.
@@ -160,7 +153,7 @@ chmod +x install.sh
 
 Close and reopen the browser so the native host is detected.
 
-✅ When working, the extension will show:
+When working, the extension will show:
 
 > 🟢 **Native connected**
 
@@ -196,8 +189,6 @@ go build -o ~/.purewolf/purewolf-native
 ```bash
 bash build-extension.sh firefox
 bash build-extension.sh chrome
-bash build-extension.sh edge
-
 ```
 
 This copies shared extension code and injects the correct manifest for the target browser.
@@ -225,9 +216,10 @@ MIT License — see `LICENSE`.
 
 ### Recommended Workflow for Users
 
-1.  Install the native helper (`https://github.com/ArcaneSphere/PureWolf-Browser-Extension/releases`)
-    
-2.  Load the browser extension for your browser
+1.  Install and Load the browser extension for your browser
+    Firefox: *[Firefox add-on](`https://addons.mozilla.org/en-US/firefox/addon/purewolf/?utm_source=addons.mozilla.org&utm_medium=referral&utm_content=search`)*
+
+2.  Install the native helper via *[Releases](`https://github.com/ArcaneSphere/PureWolf-Browser-Extension/releases`)*
     
 3.  Connect a node
     
