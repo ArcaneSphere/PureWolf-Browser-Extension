@@ -5,6 +5,7 @@ go 1.25.6
 require (
 	github.com/civilware/Gnomon v0.0.0-20240403103529-8b2fdb2b3106
 	github.com/civilware/tela v0.0.0-20250806221602-aa892d2ff8d4
+	github.com/deroproject/derohe v0.0.0-20240405032004-bd300c0e086e
 )
 
 require (
@@ -15,7 +16,6 @@ require (
 	github.com/creachadair/jrpc2 v0.43.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dchest/siphash v1.2.3 // indirect
-	github.com/deroproject/derohe v0.0.0-20240405032004-bd300c0e086e // indirect
 	github.com/deroproject/graviton v0.0.0-20220130070622-2c248a53b2e1 // indirect
 	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -53,3 +53,5 @@ require (
 )
 
 replace github.com/deroproject/derohe => github.com/civilware/derohe v0.0.0-20240909003240-fa76d6016cc6
+
+replace github.com/civilware/tela => github.com/Azylem/tela v0.0.0-20260321215354-202c8ca5ce79

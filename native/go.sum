@@ -1,4 +1,6 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
+github.com/Azylem/tela v0.0.0-20260321215354-202c8ca5ce79 h1:hwGM0G0dbFYHSn15Do8mf0nNHFwIWgcyT3nWx2Wj1ag=
+github.com/Azylem/tela v0.0.0-20260321215354-202c8ca5ce79/go.mod h1:J+maI4zPRe7zpSpTyHDopUg3eQRqCKffvBIRnOhipB8=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
@@ -23,8 +25,6 @@ github.com/civilware/Gnomon v0.0.0-20240403103529-8b2fdb2b3106 h1:9NSEj0KUC/Xlaw
 github.com/civilware/Gnomon v0.0.0-20240403103529-8b2fdb2b3106/go.mod h1:B0/D3D/FVqqugHZ0fO0da2AW+5MiO82uGLOZcmS0CFk=
 github.com/civilware/derohe v0.0.0-20240909003240-fa76d6016cc6 h1:hcCFU5eXd7CPu4AXJnaihhzOgC0SNscmQ+nrgDjKaWo=
 github.com/civilware/derohe v0.0.0-20240909003240-fa76d6016cc6/go.mod h1:EWHh1VkXRnCHvyGML98kXhngDFYebmOhk/9kZ1ATJ1c=
-github.com/civilware/tela v0.0.0-20250806221602-aa892d2ff8d4 h1:Coa5YQoaFcOd4fBEtUhbj3Kth3TX+9s5okjfulEis58=
-github.com/civilware/tela v0.0.0-20250806221602-aa892d2ff8d4/go.mod h1:J+maI4zPRe7zpSpTyHDopUg3eQRqCKffvBIRnOhipB8=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/coder/websocket v1.8.12 h1:5bUXkEPPIbewrnkU8LTCLVaxi4N4J8ahufH2vlo4NAo=
